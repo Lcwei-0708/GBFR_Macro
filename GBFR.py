@@ -179,7 +179,6 @@ def on_key_press(event, stop_event):
         is_exit_listening = True
         keyboard.unhook_all()
         keyboard.hook_key('f8', on_f8_press)
-        keyboard.ho
         time.sleep(1)
 
 current_marco = None  # 初始化當前巨集指令的變數

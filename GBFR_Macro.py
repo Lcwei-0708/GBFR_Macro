@@ -9,32 +9,35 @@ from pyautogui import ImageNotFoundException
 from PIL import Image
 
 # 縮放目標圖像大小
-def scale_image(target_image_path, window_width, window_height):
-    # 目標圖像的原始大小
-    original_width = 1920
-    original_height = 1080
-
+def scale_image(target_image, window_width, window_height):
     # 計算縮放比例
-    scale_width = window_width / original_width
-    scale_height = window_height / original_height
+    scale_width = window_width / ORIGINAL_WIDTH
+    scale_height = window_height / ORIGINAL_HEIGHT
 
     # 選擇較小的縮放比例以確保目標圖像完全可見
     scale_factor = min(scale_width, scale_height)
 
     # 縮放目標圖像
-    target_image = Image.open(target_image_path)
-    target_width, target_height = target_image.size  # 取得目標圖像的大小
+    target_width, target_height = target_image.size
     scaled_width = int(target_width * scale_factor)
     scaled_height = int(target_height * scale_factor)
     scaled_target_image = target_image.resize((scaled_width, scaled_height))
 
     return scaled_target_image
 
+# 加載目標圖像
+def load_target_images(target_images):
+    global scaled_target_images
+    for name, path in target_images.items():
+        image = Image.open(path)
+        scaled_image = scale_image(image, target_window_width, target_window_height)
+        scaled_target_images[name] = scaled_image
+    return scaled_target_images
+
 # 偵測指定畫面是否存在
-def detect_img(target_image_path):
+def detect_img(target_image, screenshot):
     try:
-        target_image = scale_image(target_image_path, target_window_width, target_window_height)
-        if pyautogui.locateOnScreen(target_image, confidence=0.8, grayscale=True):
+        if pyautogui.locate(target_image, screenshot, confidence=0.75, grayscale=True):
             return True
     except ImageNotFoundException:
         return False
@@ -60,35 +63,38 @@ def f1_commands(stop_event):
 # 當按下f2時執行的指令（素材掛機）
 def f2_commands(stop_event):
     global finish_counts
-    while not stop_event.is_set():        
+    while not stop_event.is_set():
+        screenshot = pyautogui.screenshot(allScreens=True)
         pydirectinput.PAUSE = 0.1
-        if detect_img(continue_img_path):
+        if detect_img(scaled_target_images['continue'], screenshot):
             pydirectinput.press('w')
             time.sleep(0.1)
             pydirectinput.press('enter')
             time.sleep(0.5)
-        elif detect_img(again_img_path):
+        elif detect_img(scaled_target_images['again'], screenshot):
             pydirectinput.press('3')
             time.sleep(0.1)
             pydirectinput.press('enter')
             time.sleep(0.5)
-        elif detect_img(cancel_again_path):
+        elif detect_img(scaled_target_images['cancel_again'], screenshot):
             pydirectinput.press('enter')
             time.sleep(0.1)
-            if detect_img(confirm_img_path):
-                finish_counts += 1
-                print(f"已完成{finish_counts}場")
-                pydirectinput.press('enter')
-            time.sleep(0.5)
-        elif detect_img(exp_img_path):
+            # if detect_img(scaled_target_images['confirm'], screenshot):
+            finish_counts += 1
+            print(f"已完成{finish_counts}場")
+            pydirectinput.press('enter')
+            time.sleep(5)
+        elif detect_img(scaled_target_images['exp'], screenshot):
             pydirectinput.press('enter')
             time.sleep(0.5)
+        time.sleep(3)
 
 # 當按下f3時執行的指令（高階BOSS掛機）
 def f3_commands(stop_event):
     global finish_counts
     while not stop_event.is_set():
-        if detect_img(fighting_img_path):
+        screenshot = pyautogui.screenshot(allScreens=True)
+        if detect_img(scaled_target_images['fighting'], screenshot):
             pydirectinput.PAUSE = 0.03
             pydirectinput.keyDown('q')
             pydirectinput.keyDown('v')
@@ -100,32 +106,33 @@ def f3_commands(stop_event):
                     time.sleep(0.05)
             RG_thread = threading.Thread(target=Press_RG)
             RG_thread.start()
-            time.sleep(10)
+            time.sleep(20)
             pydirectinput.keyUp('q')
             pydirectinput.keyUp('v')
         else:
             pydirectinput.PAUSE = 0.1
-            if detect_img(continue_img_path):
+            if detect_img(scaled_target_images['continue'], screenshot):
                 pydirectinput.press('w')
                 time.sleep(0.1)
                 pydirectinput.press('enter')
                 time.sleep(0.5)
-            elif detect_img(again_img_path):
+            elif detect_img(scaled_target_images['again'], screenshot):
                 pydirectinput.press('3')
                 time.sleep(0.1)
                 pydirectinput.press('enter')
                 time.sleep(0.5)
-            elif detect_img(cancel_again_path):
+            elif detect_img(scaled_target_images['cancel_again'], screenshot):
                 pydirectinput.press('enter')
-                time.sleep(0.1)
-                if detect_img(confirm_img_path):
-                    finish_counts += 1
-                    print(f"已完成 {finish_counts} 場")
-                    pydirectinput.press('enter')
-                time.sleep(0.5)
-            elif detect_img(exp_img_path):
+                time.sleep(1)
+                # if detect_img(scaled_target_images['confirm'], screenshot):
+                finish_counts += 1
+                print(f"已完成{finish_counts}場")
+                pydirectinput.press('enter')
+                time.sleep(5)
+            elif detect_img(scaled_target_images['exp'], screenshot):
                 pydirectinput.press('enter')
                 time.sleep(0.5)
+        time.sleep(3)
     pydirectinput.keyUp('q')
     pydirectinput.keyUp('v')
 
@@ -210,9 +217,12 @@ def on_key_press(event, stop_event):
         time.sleep(1)
 
 
+# 目標圖像的原始大小
+ORIGINAL_WIDTH = 1920
+ORIGINAL_HEIGHT = 1080
 # 獲取目標畫面的寬度和高度
-target_window_width = 0
-target_window_height = 0
+target_window_width = 1920
+target_window_height = 1080
 current_marco = None  # 初始化當前巨集指令的變數
 is_listening = False  # 初始化鍵盤是否被監聽的變數
 is_exit_listening = False  # 初始化離開程式按鍵是否被監聽的變數
@@ -222,12 +232,16 @@ unfocused_printed = False  # 初始化是否印出視窗未被聚焦的提示
 stop_event = threading.Event()  # 初始化多線程活動變數
 finish_counts = 0  # 初始化統計完成場數的變數
 target_window_title = "Granblue Fantasy: Relink"  # 設定要捕捉的視窗標題
-continue_img_path = "./asset/continue.png"  # 設定繼續下一場的畫面路徑
-again_img_path = "./asset/again.png"  # 設定再次挑戰的畫面路徑
-cancel_again_path = "./asset/cancel_again.png"  # 設定取消繼續的畫面路徑
-exp_img_path = "./asset/exp.png"  # 設定貢獻度的畫面路徑
-confirm_img_path = "./asset/confirm.png"  # 設定確認挑戰的畫面路徑
-fighting_img_path = "./asset/fighting.png"  # 設定戰鬥的畫面路徑
+# 目標圖像路徑字典
+target_images = {
+    "continue": "./asset/continue.png",  # 設定繼續下一場的畫面路徑
+    "again": "./asset/again.png",  # 設定再次挑戰的畫面路徑
+    "cancel_again": "./asset/cancel_again.png",  # 設定取消繼續的畫面路徑
+    "exp": "./asset/exp.png",  # 設定貢獻度的畫面路徑
+    "confirm": "./asset/confirm.png",  # 設定確認挑戰的畫面路徑
+    "fighting": "./asset/fighting.png"  # 設定戰鬥的畫面路徑
+}
+scaled_target_images = {}
 
 # 循環檢測視窗是否被聚焦
 while True:
@@ -235,10 +249,12 @@ while True:
         break
     target_window = get_target_window()
     if target_window:
-        if is_window_focused(target_window): 
-            # 獲取視窗的寬度和高度
-            target_window_width = target_window.width
-            target_window_height = target_window.height            
+        if is_window_focused(target_window):
+            if target_window.width != target_window_width:
+                # 獲取視窗的寬度和高度
+                target_window_width = target_window.width
+                target_window_height = target_window.height 
+                scaled_target_images = load_target_images(target_images)
             unfocused_printed = False
             if not is_listening:                
                 stop_event = threading.Event()

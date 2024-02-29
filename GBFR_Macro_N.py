@@ -25,7 +25,6 @@ def f1_commands(stop_event):
 
 # 當按下f2時執行的指令（素材掛機）
 def f2_commands(stop_event):
-    global finish_counts
     while not stop_event.is_set():
         pydirectinput.PAUSE = 0.1
         pydirectinput.press('w')
@@ -35,18 +34,22 @@ def f2_commands(stop_event):
 
 # 當按下f3時執行的指令（高階BOSS掛機）
 def f3_commands(stop_event):
-    global finish_counts
+    def press_rg():
+        while not stop_event.is_set():
+            pydirectinput.press('r')
+            pydirectinput.press('g')     
+            time.sleep(0.03)
+    rg_thread = threading.Thread(target=press_rg)
+    rg_thread.start()    
+    next_game_thread = threading.Thread(target=f2_commands, args=(stop_event,))
+    next_game_thread.start()
     while not stop_event.is_set():
-        next_game_thread = threading.Thread(target=f2_commands, args=(stop_event,))
-        next_game_thread.start()
         pydirectinput.PAUSE = 0.03
         pydirectinput.keyDown('q')
         pydirectinput.keyDown('v')
-        time.sleep(0.05)
-        for _ in range(20):
-            pydirectinput.press('r')
-            pydirectinput.press('g')               
-            time.sleep(0.03)
+        time.sleep(3)
+        pydirectinput.keyUp('q')
+        pydirectinput.keyUp('v')    
     pydirectinput.keyUp('q')
     pydirectinput.keyUp('v')
 
@@ -70,6 +73,7 @@ def f4_commands(stop_event):
         pydirectinput.keyUp('k')
         time.sleep(0.1)     
     pydirectinput.keyUp('w')
+    pydirectinput.functools
 
 # 當按下f8時關閉程式
 def on_f8_press(event):
@@ -118,16 +122,16 @@ def on_key_press(event, stop_event):
         else:
             print("已有其他巨集指令在進行")
     elif event.name == 'f5': #停止所有指令
-        print("停止所有指令")
-        stop_event.set()
+        print("正在停止所有指令...")
+        stop_event.set()        
+        time.sleep(1)
         current_marco = None
-        finish_counts = 0
         is_listening = False
         is_macro_running = False
         is_exit_listening = True
         keyboard.unhook_all()
+        print("已停止所有指令")
         keyboard.hook_key('f8', on_f8_press)
-        time.sleep(1)
 
 current_marco = None  # 初始化當前巨集指令的變數
 is_listening = False  # 初始化鍵盤是否被監聽的變數

@@ -55,17 +55,18 @@ def is_window_focused(window):
 
 # 當按下f1時執行的指令（左鍵連點）
 def f1_commands(stop_event):
-    pydirectinput.PAUSE = 0.001
-    while not stop_event.is_set():
-        pydirectinput.press('enter')
-        time.sleep(0.005)
+    while not stop_event.is_set():        
+        pydirectinput.mouseDown()
+        time.sleep(0.0000001)
+        pydirectinput.mouseUp()
+        time.sleep(0.0000001)
 
 # 當按下f2時執行的指令（素材掛機）
 def f2_commands(stop_event):
     global finish_counts
     while not stop_event.is_set():
+        print("偵測畫面中...")
         screenshot = pyautogui.screenshot(allScreens=True)
-        pydirectinput.PAUSE = 0.1
         if detect_img(scaled_target_images['continue'], screenshot):
             pydirectinput.press('w')
             time.sleep(0.1)
@@ -93,9 +94,10 @@ def f2_commands(stop_event):
 def f3_commands(stop_event):
     global finish_counts
     while not stop_event.is_set():
+        print("偵測畫面中...")
         screenshot = pyautogui.screenshot(allScreens=True)
         if detect_img(scaled_target_images['fighting'], screenshot):
-            pydirectinput.PAUSE = 0.03
+            print("偵測畫面中...")
             pydirectinput.keyDown('q')
             pydirectinput.keyDown('v')
             time.sleep(0.05)
@@ -110,7 +112,6 @@ def f3_commands(stop_event):
             pydirectinput.keyUp('q')
             pydirectinput.keyUp('v')
         else:
-            pydirectinput.PAUSE = 0.1
             if detect_img(scaled_target_images['continue'], screenshot):
                 pydirectinput.press('w')
                 time.sleep(0.1)
@@ -136,11 +137,10 @@ def f3_commands(stop_event):
     pydirectinput.keyUp('q')
     pydirectinput.keyUp('v')
 
-# 當按下f4時執行的指令（拉卡姆掛機）
+# 當按下f4時執行的指令（蘭斯洛特閃避）
 def f4_commands(stop_event):
     next_game_thread = threading.Thread(target=f2_commands, args=(stop_event,))
     next_game_thread.start()
-    pydirectinput.PAUSE = 0.000001
     def click_mouse():
         while not stop_event.is_set():            
             time.sleep(0.0001) 
@@ -162,6 +162,7 @@ def on_f8_press(event):
     global should_exit
     if event.name == 'f8':
         print("關閉程式...")
+        stop_event.set()
         should_exit = True
 
 # 按下按鍵處理任務
@@ -199,22 +200,23 @@ def on_key_press(event, stop_event):
     elif event.name == 'f4': #執行F4巨集指令
         if not is_macro_running:
             current_marco = 'F4'
-            print("執行F4巨集指令（拉卡姆掛機）")
+            print("執行F4巨集指令（蘭斯洛特閃避）")
             is_macro_running = True
             threading.Thread(target=f4_commands, args=(stop_event,)).start()
         else:
             print("已有其他巨集指令在進行")
     elif event.name == 'f5': #停止所有指令
-        print("停止所有指令")
-        stop_event.set()
+        print("正在停止所有指令...")
+        stop_event.set()        
+        time.sleep(1)
         current_marco = None
         finish_counts = 0
         is_listening = False
         is_macro_running = False
         is_exit_listening = True
-        keyboard.unhook_all()
+        keyboard.unhook_all()        
+        print("已停止所有指令")
         keyboard.hook_key('f8', on_f8_press)
-        time.sleep(1)
 
 
 # 目標圖像的原始大小
@@ -223,6 +225,7 @@ ORIGINAL_HEIGHT = 1080
 # 獲取目標畫面的寬度和高度
 target_window_width = 1920
 target_window_height = 1080
+pydirectinput.PAUSE = 0.0000001  # 設定按鍵間格時間
 current_marco = None  # 初始化當前巨集指令的變數
 is_listening = False  # 初始化鍵盤是否被監聽的變數
 is_exit_listening = False  # 初始化離開程式按鍵是否被監聽的變數
